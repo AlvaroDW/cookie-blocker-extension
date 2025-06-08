@@ -9,13 +9,15 @@
       "default_icon": "icons/icon.png"
     },
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "background.js",
+      "type": "module"
     },
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["storage.js", "content_script.js"],
-        "run_at": "document_idle"
+        "js": ["storage.js", "config.js", "logger.js", "utils.js", "detector.js", "content_script.js"],
+        "run_at": "document_idle",
+        "type": "module"
       }
     ],
     "web_accessible_resources": [{
