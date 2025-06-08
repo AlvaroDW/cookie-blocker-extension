@@ -1,0 +1,17 @@
+{
+    "elpais.com": {
+      "selector": "#didomi-notice-agree-button",
+      "accion": "click",
+      "descripcion": "Botón 'Rechazar' accesible directamente"
+    },
+    "example.com": {
+      "selector": ".cookie-reject-button",
+      "accion": "click",
+      "descripcion": "Botón de rechazo personalizado"
+    },
+    "ikea.com": {
+      "tipo": "iframe",
+      "descripcion": "Iframe de terceros - no accesible"
+    }
+  }
+  
