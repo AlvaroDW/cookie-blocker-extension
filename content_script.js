@@ -1,18 +1,22 @@
-// Función para obtener las reglas
+// Add a centralized logging system
+const logger = {
+    info: (message) => console.log(`[CookieBlocker] ${message}`),
+    error: (message, error) => console.error(`[CookieBlocker] ${message}`, error),
+    warn: (message) => console.warn(`[CookieBlocker] ${message}`)
+};
+
 obtenerReglas((reglasPorDominio) => {
     const dominio = window.location.hostname.replace(/^www\./, '');
     const regla = reglasPorDominio[dominio];
   
-    // Función para verificar si el nodo es un banner de cookies
     function esBannerDeCookies(nodo) {
-      const posiblesClases = ['cookie', 'consent', 'gdpr', 'privacy', 'truste'];
+      const posiblesClases = ['cookie', 'consent', 'gdpr', 'privacy', 'truste', 'onetrust'];
       const idClase = (nodo?.id + ' ' + nodo?.className).toLowerCase();
       return posiblesClases.some(c => idClase.includes(c));
     }
   
-    // Función para buscar y clicar el botón
-    function buscarBotonRechazoSeguro() {
-      const botones = Array.from(document.querySelectorAll('button, input[type="button"], a'));
+    function buscarBotonRechazoSeguroEn(doc) {
+      const botones = Array.from(doc.querySelectorAll('button, input[type="button"], a'));
       for (const boton of botones) {
         const texto = boton.innerText?.toLowerCase() || '';
         const esTextoRechazo = ['rechazar', 'reject', 'solo necesarias', 'denegar', 'rechazar todo'].some(t => texto.includes(t));
@@ -30,45 +34,70 @@ obtenerReglas((reglasPorDominio) => {
       return null;
     }
   
+    function buscarBotonEnPaginaPrincipalYIframes() {
+      // Buscar en documento principal
+      const botonPrincipal = buscarBotonRechazoSeguroEn(document);
+      if (botonPrincipal) return botonPrincipal;
+  
+      // Buscar en iframes accesibles
+      const iframes = Array.from(document.querySelectorAll('iframe'));
+      for (const iframe of iframes) {
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          const botonIframe = buscarBotonRechazoSeguroEn(doc);
+          if (botonIframe) return botonIframe;
+        } catch (e) {
+          // Cross-origin iframe, no accesible
+          continue;
+        }
+      }
+  
+      return null;
+    }
+  
     // Si hay una regla personalizada, usarla
     if (regla?.botonRechazo) {
       const boton = document.querySelector(regla.botonRechazo);
       if (boton && boton.offsetParent !== null) {
         boton.click();
-        console.log('[CookieBlocker] Botón personalizado clicado.');
+        logger.info('Botón personalizado clicado.');
       } else {
-        console.log('[CookieBlocker] Botón personalizado no encontrado.');
+        logger.info('Botón personalizado no encontrado.');
       }
       return;
     }
   
-    // Si no hay una regla personalizada, usar una lógica genérica
     let intentos = 0;
     const maxIntentos = 6;
   
-    // Observer
     const observer = new MutationObserver(() => {
       if (intentos >= maxIntentos) {
         observer.disconnect();
-        console.log('[CookieBlocker] Máximo de intentos alcanzado.');
+        logger.info('Máximo de intentos alcanzado.');
         return;
       }
   
       intentos++;
-      const botonSeguro = buscarBotonRechazoSeguro();
+      const botonSeguro = buscarBotonEnPaginaPrincipalYIframes();
       if (botonSeguro) {
         botonSeguro.click();
-        console.log('[CookieBlocker] Clic realizado en botón seguro:', botonSeguro.innerText.trim());
+        logger.info('Clic realizado en botón seguro:', botonSeguro.innerText.trim());
         observer.disconnect();
       }
     });
   
     observer.observe(document.body, { childList: true, subtree: true });
   
-    // Timeout
     setTimeout(() => {
       observer.disconnect();
-      console.log('[CookieBlocker] Observador detenido tras timeout.');
-    }, 8000);
+      logger.info('Observador detenido tras timeout.');
+    }, 10000);
   });
+  
+// Add try-catch blocks for critical operations
+try {
+    // ... existing code ...
+} catch (error) {
+    logger.error('Error in cookie rejection process', error);
+}
   
