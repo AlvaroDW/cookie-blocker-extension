@@ -18,6 +18,10 @@
         "run_at": "document_idle"
       }
     ],
+    "web_accessible_resources": [{
+        "resources": ["rules.json"],
+        "matches": ["<all_urls>"]
+      }],
     "icons": {
       "48": "icons/icon.png"
     }
