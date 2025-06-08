@@ -1,126 +1,106 @@
-// Add a centralized logging system
-const logger = {
-    info: (message) => console.log(`[CookieBlocker] ${message}`),
-    error: (message, error) => console.error(`[CookieBlocker] ${message}`, error),
-    warn: (message) => console.warn(`[CookieBlocker] ${message}`)
+// Importaciones de módulos
+import { CONFIG } from './config.js';
+import { logger } from './logger.js';
+import { debounce, getCachedSelector, canAttempt, cleanup } from './utils.js';
+import { buscarBotonRechazoSeguroEn, buscarBotonEnIframes } from './detector.js';
+
+// Gestión de estado
+const state = {
+    isProcessing: false,
+    hasClicked: false,
+    lastAttempt: 0
 };
 
-// Cache DOM queries and reuse them
-const cachedSelectors = new Map();
+// Función principal de búsqueda y clic
+const buscarYClickarBoton = async () => {
+    if (!canAttempt(state.lastAttempt) || state.hasClicked) return;
 
-function getCachedSelector(selector) {
-    if (!cachedSelectors.has(selector)) {
-        cachedSelectors.set(selector, document.querySelector(selector));
+    try {
+        // Buscar en documento principal
+        const botonPrincipal = buscarBotonRechazoSeguroEn(document);
+        if (botonPrincipal) {
+            botonPrincipal.click();
+            state.hasClicked = true;
+            logger.info(`Clic realizado en botón principal: ${botonPrincipal.innerText.trim()}`);
+            return;
+        }
+
+        // Buscar en iframes
+        const botonIframe = await buscarBotonEnIframes();
+        if (botonIframe) {
+            botonIframe.click();
+            state.hasClicked = true;
+            logger.info(`Clic realizado en botón de iframe: ${botonIframe.innerText.trim()}`);
+            return;
+        }
+    } catch (error) {
+        logger.error('Error al buscar y clickar botón', error);
     }
-    return cachedSelectors.get(selector);
-}
-
-// Debounce the observer callback
-const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
 };
 
-obtenerReglas((reglasPorDominio) => {
-    const dominio = window.location.hostname.replace(/^www\./, '');
-    const regla = reglasPorDominio[dominio];
-  
-    function esBannerDeCookies(nodo) {
-      const posiblesClases = ['cookie', 'consent', 'gdpr', 'privacy', 'truste', 'onetrust'];
-      const idClase = (nodo?.id + ' ' + nodo?.className).toLowerCase();
-      return posiblesClases.some(c => idClase.includes(c));
-    }
-  
-    function buscarBotonRechazoSeguroEn(doc) {
-      const botones = Array.from(doc.querySelectorAll('button, input[type="button"], a'));
-      for (const boton of botones) {
-        const texto = boton.innerText?.toLowerCase() || '';
-        const esTextoRechazo = ['rechazar', 'reject', 'solo necesarias', 'denegar', 'rechazar todo'].some(t => texto.includes(t));
-        const contenedor = boton.closest('div, section, form');
-  
-        if (
-          esTextoRechazo &&
-          contenedor &&
-          esBannerDeCookies(contenedor) &&
-          boton.offsetParent !== null
-        ) {
-          return boton;
-        }
-      }
-      return null;
-    }
-  
-    function buscarBotonEnPaginaPrincipalYIframes() {
-      // Buscar en documento principal
-      const botonPrincipal = buscarBotonRechazoSeguroEn(document);
-      if (botonPrincipal) return botonPrincipal;
-  
-      // Buscar en iframes accesibles
-      const iframes = Array.from(document.querySelectorAll('iframe'));
-      for (const iframe of iframes) {
-        try {
-          const doc = iframe.contentDocument || iframe.contentWindow.document;
-          const botonIframe = buscarBotonRechazoSeguroEn(doc);
-          if (botonIframe) return botonIframe;
-        } catch (e) {
-          // Cross-origin iframe, no accesible
-          continue;
-        }
-      }
-  
-      return null;
-    }
-  
-    // Si hay una regla personalizada, usarla
-    if (regla?.botonRechazo) {
-      const boton = document.querySelector(regla.botonRechazo);
-      if (boton && boton.offsetParent !== null) {
+// Función para manejar reglas personalizadas
+const manejarReglaPersonalizada = (regla) => {
+    if (!regla?.botonRechazo) return false;
+
+    const boton = getCachedSelector(regla.botonRechazo);
+    if (boton && boton.offsetParent !== null) {
         boton.click();
         logger.info('Botón personalizado clicado.');
-      } else {
-        logger.info('Botón personalizado no encontrado.');
-      }
-      return;
+        return true;
     }
-  
+    
+    logger.warn('Botón personalizado no encontrado.');
+    return false;
+};
+
+// Función para inicializar el observer
+const inicializarObserver = () => {
     let intentos = 0;
-    const maxIntentos = 6;
-  
-    const observer = new MutationObserver(() => {
-      if (intentos >= maxIntentos) {
-        observer.disconnect();
-        logger.info('Máximo de intentos alcanzado.');
-        return;
-      }
-  
-      intentos++;
-      const botonSeguro = buscarBotonEnPaginaPrincipalYIframes();
-      if (botonSeguro) {
-        botonSeguro.click();
-        logger.info('Clic realizado en botón seguro:', botonSeguro.innerText.trim());
-        observer.disconnect();
-      }
-    });
-  
+
+    const observer = new MutationObserver(
+        debounce(() => {
+            if (intentos >= CONFIG.maxIntentos) {
+                cleanup(observer);
+                logger.info('Máximo de intentos alcanzado.');
+                return;
+            }
+
+            intentos++;
+            buscarYClickarBoton();
+        }, CONFIG.debounceTime)
+    );
+
     observer.observe(document.body, { childList: true, subtree: true });
-  
-    setTimeout(() => {
-      observer.disconnect();
-      logger.info('Observador detenido tras timeout.');
-    }, 10000);
-  });
-  
-// Add try-catch blocks for critical operations
-try {
-    // ... existing code ...
-} catch (error) {
-    logger.error('Error in cookie rejection process', error);
-}
-  
+    return observer;
+};
+
+// Función principal de inicialización
+const inicializar = (reglasPorDominio) => {
+    try {
+        const dominio = window.location.hostname.replace(/^www\./, '');
+        const regla = reglasPorDominio[dominio];
+
+        // Intentar usar regla personalizada primero
+        if (manejarReglaPersonalizada(regla)) {
+            return;
+        }
+
+        // Inicializar observer para búsqueda automática
+        const observer = inicializarObserver();
+
+        // Timeout de seguridad
+        setTimeout(() => {
+            cleanup(observer);
+            logger.info('Observador detenido tras timeout.');
+        }, CONFIG.timeout);
+
+        // Limpieza al descargar la página
+        window.addEventListener('unload', () => cleanup(observer));
+
+    } catch (error) {
+        logger.error('Error en el proceso principal', error);
+    }
+};
+
+// Iniciar el script
+obtenerReglas(inicializar); 
