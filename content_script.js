@@ -5,6 +5,29 @@ const logger = {
     warn: (message) => console.warn(`[CookieBlocker] ${message}`)
 };
 
+// Cache DOM queries and reuse them
+const cachedSelectors = new Map();
+
+function getCachedSelector(selector) {
+    if (!cachedSelectors.has(selector)) {
+        cachedSelectors.set(selector, document.querySelector(selector));
+    }
+    return cachedSelectors.get(selector);
+}
+
+// Debounce the observer callback
+const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
 obtenerReglas((reglasPorDominio) => {
     const dominio = window.location.hostname.replace(/^www\./, '');
     const regla = reglasPorDominio[dominio];
