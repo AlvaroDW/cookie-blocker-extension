@@ -5,17 +5,17 @@
     "description": "Rechaza automáticamente cookies no esenciales usando reglas personalizadas.",
     "permissions": ["storage", "scripting", "tabs"],
     "action": {
-      "default_popup": "popup.html",
+      "default_popup": "popup/popup.html",
       "default_icon": "icons/icon.png"
     },
     "background": {
-      "service_worker": "background.js",
+      "scripts": ["background/background.js"],
       "type": "module"
     },
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["storage.js", "config.js", "logger.js", "utils.js", "detector.js", "content_script.js"],
+        "js": ["content/content_script.js"],
         "run_at": "document_idle",
         "type": "module"
       }

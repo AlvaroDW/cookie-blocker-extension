@@ -1,5 +1,6 @@
-import { CONFIG } from './config.js';
-import { logger } from './logger.js';
+// Detector de banners de cookies
+import { CONFIG } from '../config/config.js';
+import { logger } from '../logger/logger.js';
 
 // Función para detectar banners de cookies
 export function esBannerDeCookies(nodo) {

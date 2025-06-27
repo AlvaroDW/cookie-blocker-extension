@@ -7,6 +7,38 @@
 
 A browser extension that automatically rejects non-essential cookies using custom rules.
 
+## Project Structure
+
+The project is organized as follows:
+
+```
+cookie-blocker-extension/
+  background/
+    background.js
+  content/
+    content_script.js
+    detector.js
+    utils.js
+  popup/
+    popup.html
+    popup.js
+  config/
+    config.js
+    rules.json
+  storage/
+    storage.js
+  logger/
+    logger.js
+  icons/
+    icon.png
+  manifest.json
+  README.md
+  .gitignore
+```
+
+- Each folder groups related files by their function (background scripts, content scripts, popup UI, configuration, storage, logger, etc).
+- Update import paths and manifest references if you make changes to the structure.
+
 ## Features
 
 - Automatic rejection of non-essential cookies
@@ -71,6 +103,38 @@ This project is under the MIT License.
 # Auto Cookie Blocker
 
 Una extensión de navegador que rechaza automáticamente las cookies no esenciales utilizando reglas personalizadas.
+
+## Estructura del Proyecto
+
+El proyecto está organizado de la siguiente manera:
+
+```
+cookie-blocker-extension/
+  background/
+    background.js
+  content/
+    content_script.js
+    detector.js
+    utils.js
+  popup/
+    popup.html
+    popup.js
+  config/
+    config.js
+    rules.json
+  storage/
+    storage.js
+  logger/
+    logger.js
+  icons/
+    icon.png
+  manifest.json
+  README.md
+  .gitignore
+```
+
+- Cada carpeta agrupa archivos relacionados por su función (scripts de fondo, scripts de contenido, interfaz popup, configuración, almacenamiento, logger, etc).
+- Actualiza las rutas de importación y referencias en el manifest si realizas cambios en la estructura.
 
 ## Características
 

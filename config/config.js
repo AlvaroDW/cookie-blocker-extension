@@ -1,3 +1,4 @@
+// Configuración de la extensión
 export const CONFIG = {
     maxIntentos: 6,
     timeout: 10000,

@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config/config.js';
 
 // Cache de selectores DOM
 const cachedSelectors = new Map();

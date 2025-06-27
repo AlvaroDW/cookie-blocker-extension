@@ -1,6 +1,6 @@
 // Importaciones de módulos
-import { CONFIG } from './config.js';
-import { logger } from './logger.js';
+import { CONFIG } from '../config/config.js';
+import { logger } from '../logger/logger.js';
 import { debounce, getCachedSelector, canAttempt, cleanup } from './utils.js';
 import { buscarBotonRechazoSeguroEn, buscarBotonEnIframes } from './detector.js';
 

@@ -1,3 +1,4 @@
+// Logger para la extensión
 export const logger = {
     info: (message) => console.log(`[CookieBlocker] ${message}`),
     error: (message, error) => console.error(`[CookieBlocker] ${message}`, error),
